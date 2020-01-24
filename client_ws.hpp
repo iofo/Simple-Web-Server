@@ -381,8 +381,11 @@ namespace SimpleWeb {
       }
       return parsed_host_port;
     }
-
+    
+    public:
     virtual void connect() = 0;
+
+    std::map<std::string,std::string> hdrs;
 
     void upgrade(const std::shared_ptr<Connection> &connection) {
       auto corrected_path = path;
@@ -398,6 +401,11 @@ namespace SimpleWeb {
       ostream << "\r\n";
       ostream << "Upgrade: websocket\r\n";
       ostream << "Connection: Upgrade\r\n";
+      
+      for(auto i : hdrs)
+      {
+        ostream << i.first <<": "<<i.second<<"\r\n";
+      }
 
       // Make random 16-byte nonce
       std::string nonce;
@@ -699,6 +707,7 @@ namespace SimpleWeb {
     SocketClient(const std::string &server_port_path) noexcept : SocketClientBase<WS>::SocketClientBase(server_port_path, 80){};
 
   protected:
+    public:
     void connect() override {
       LockGuard lock(connection_mutex);
       auto connection = this->connection = std::shared_ptr<Connection>(new Connection(handler_runner, config.timeout_idle, *io_service));
