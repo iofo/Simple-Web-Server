@@ -49,7 +49,7 @@ namespace SimpleWeb {
         auto session_id_context = std::to_string(acceptor->local_endpoint().port()) + ':';
         session_id_context.append(config.address.rbegin(), config.address.rend());
         SSL_CTX_set_session_id_context(context.native_handle(), reinterpret_cast<const unsigned char *>(session_id_context.data()),
-                                       std::min<std::size_t>(session_id_context.size(), SSL_MAX_SSL_SESSION_ID_LENGTH));
+                                       static_cast<unsigned int>(std::min<std::size_t>(session_id_context.size(), SSL_MAX_SSL_SESSION_ID_LENGTH)));
       }
     }
 
@@ -70,10 +70,10 @@ namespace SimpleWeb {
 
           connection->set_timeout(config.timeout_request);
           connection->socket->async_handshake(asio::ssl::stream_base::server, [this, connection](const error_code &ec) {
+            connection->cancel_timeout();
             auto lock = connection->handler_runner->continue_lock();
             if(!lock)
               return;
-            connection->cancel_timeout();
             if(!ec)
               read_handshake(connection);
           });
